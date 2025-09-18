@@ -75,7 +75,7 @@ object Headers {
 
   val empty: Headers = Headers(Map.empty)
 
-  def asScala(headers: JHeaders): Headers = {
+  private[nats] def asScala(headers: JHeaders): Headers = {
     val name = (name: String) => HeaderName.assume(CIString(name))
     val value = (value: String) => HeaderValue.assume(value)
 
@@ -89,7 +89,7 @@ object Headers {
     )
   }
 
-  def asJava(headers: Headers): JHeaders = {
+  private[nats] def asJava(headers: Headers): JHeaders = {
     val jh = new JHeaders()
     val name = (name: HeaderName) => name.value.toString
     val value = (value: HeaderValue) => value.value: String

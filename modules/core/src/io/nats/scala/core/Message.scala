@@ -37,14 +37,14 @@ object Message {
       data: Array[Byte]
   ) extends Message
 
-  def asScala(message: JMessage): Message = Impl(
+  private[nats] def asScala(message: JMessage): Message = Impl(
     Subject.Single.assume(message.getSubject()),
     Option(message.getReplyTo()).map(Subject.Single.assume(_)),
     Option(message.getHeaders()).map(Headers.asScala(_)).getOrElse(Headers.empty),
     Option(message.getData()).getOrElse(Array.emptyByteArray)
   )
 
-  def asJava(message: Message): JMessage = new NatsMessage(
+  private[nats] def asJava(message: Message): JMessage = new NatsMessage(
     message.subject.value,
     message.replyTo.map(_.value).orNull,
     Headers.asJava(message.headers),

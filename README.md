@@ -15,14 +15,14 @@ the current [NATS.java](https://github.com/nats-io/nats.java) implementation.
 ### SBT
 
 ```scala
-libraryDependencies += "io.github.alixba" %% "nats-scala" % "0.0.0"
+libraryDependencies += "io.github.alixba" %% "nats-scala-core" % "0.0.0"
 ```
 
 ### Mill
 
 ```scala
 override def mvnDeps: Simple[Seq[Dep]] = Seq(
-  mvn"io.github.alixba::nats-scala:0.0.0"
+  mvn"io.github.alixba::nats-scala-core:0.0.0"
 )
 ```
 
@@ -243,3 +243,70 @@ object Main extends IOApp.Simple {
 ### Jaeger
 
 ![nats-scala-otel-example](docs/images/nats-scala-otel-example.png)
+
+
+## Extra
+
+### Error Message
+
+Since there is no out of the box support to handle error in processing, the extra module offers a way to propagate error using headers as a support.
+
+```scala
+import cats.effect.IO
+import cats.effect.IOApp
+import io.nats.client.Options
+import io.nats.scala.core.Headers
+import io.nats.scala.core.Message
+import io.nats.scala.core.Nats
+import io.nats.scala.extra.syntax.headers.toHeadersOps
+import io.nats.scala.extra.syntax.message.toMessageOps
+
+object Main extends IOApp.Simple {
+
+  def printMessage(message: Message): String = s"""
+    Message{
+      headers=${message.headers.map.map { case (k, v) => s"${k.value.toString} -> [${v.map(_.value).mkString(",")}]" }.mkString}
+      hasError=${message.hasError}
+      errorCode=${message.getErrorCode.map(_.toString).getOrElse("")}
+      errorText=${message.getErrorText.map(_.value).getOrElse("")}
+    }
+  """
+
+  override def run: IO[Unit] =
+    Nats.connect[IO](Options.builder().build()).use { connection =>
+      connection.stream("subject").flatMap { case (stream, cancel) =>
+        val streamF = stream
+          .evalTap { message =>
+            message.replyTo match {
+              case Some(replyTo) if message.data.isEmpty =>
+                connection.publish(replyTo, Headers.empty.withError(400, "Bad Request"), Array.emptyByteArray)
+              case Some(replyTo) =>
+                connection.publish(replyTo, "Success".getBytes())
+              case None =>
+                IO.unit
+            }
+          }
+          .compile
+          .drain
+
+        for {
+          _ <- streamF.uncancelable.start
+          error <- connection.request("subject", Array.emptyByteArray)
+          _ <- cancel
+          _ <- IO.println(printMessage(error))
+        } yield ()
+      }
+    }
+
+}
+```
+
+Output
+```
+Message{
+  headers=x-nats-scala-error -> [400,Bad Request]
+  hasError=true
+  errorCode=400
+  errorText=Bad Request
+}
+```
