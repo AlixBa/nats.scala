@@ -39,10 +39,16 @@ object `package` extends Module {
       override def moduleDeps: Seq[PublishModule] = super.moduleDeps ++
         Seq(core)
 
+      override def repositories: Simple[Seq[String]] = Seq(
+        "https://central.sonatype.com/repository/maven-snapshots/"
+        )
+
       override def mvnDeps: Simple[Seq[Dep]] = Seq(
-        mvn"io.opentelemetry.instrumentation:opentelemetry-nats-2.17:2.21.0-alpha",
-        mvn"org.typelevel::otel4s-oteljava-context-storage:0.14.0-RC2",
-        mvn"org.typelevel::otel4s-oteljava-trace:0.14.0-RC2"
+        mvn"io.opentelemetry.instrumentation:opentelemetry-nats-2.17:2.21.0-alpha-SNAPSHOT",
+        mvn"org.typelevel::log4cats-core:2.7.1",
+        mvn"org.typelevel::otel4s-oteljava-context-storage:0.14.0-RC3",
+        mvn"org.typelevel::otel4s-oteljava-metrics:0.14.0-RC3",
+        mvn"org.typelevel::otel4s-oteljava-trace:0.14.0-RC3"
       )
 
       object test extends NatsScalaTestModule {
@@ -52,8 +58,10 @@ object `package` extends Module {
         override def forkArgs: Simple[Seq[String]] = Seq("-Dcats.effect.trackFiberContext=true")
 
         override def mvnDeps: Simple[Seq[Dep]] = Seq(
-          mvn"org.typelevel::otel4s-oteljava-context-storage-testkit:0.14.0-RC2",
-          mvn"org.typelevel::otel4s-oteljava-trace-testkit:0.14.0-RC2"
+          mvn"org.typelevel::log4cats-testing:2.7.1",
+          mvn"org.typelevel::otel4s-oteljava-context-storage-testkit:0.14.0-RC3",
+          mvn"org.typelevel::otel4s-oteljava-metrics-testkit:0.14.0-RC3",
+          mvn"org.typelevel::otel4s-oteljava-trace-testkit:0.14.0-RC3"
         )
       }
     }
@@ -78,7 +86,7 @@ trait NatsScalaModule
     with ScalafixModule
     with SonatypeCentralPublishModule {
 
-  override def publishVersion: Simple[String] = "0.1.0"
+  override def publishVersion: Simple[String] = "0.0.1"
   override def artifactName: Simple[String] = Task(super.artifactName().replace("modules-", "nats-scala-"))
 
   def crossValue: String
@@ -104,7 +112,7 @@ trait NatsScalaModule
     url = "https://github.com/AlixBa/nats.scala",
     licenses = Seq(License.`Apache-2.0`),
     versionControl = VersionControl.github("alixba", "nats.scala"),
-    developers = Seq(Developer("alixba", "Alix Ba", "https://github.com/AlixBa"))
+    developers = Seq(Developer("alixba", "AlixBa", "https://github.com/AlixBa"))
   )
 
   trait NatsScalaTestModule extends ScalaTests with TestModule.Munit with ScalafixModule {

@@ -18,12 +18,18 @@ package io.nats.scala.core
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
+import io.nats.client.Connection as JConnection
+import io.nats.client.Nats as JNats
 import io.nats.client.Options as JOptions
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.utility.DockerImageName
 
+import scala.concurrent.duration.DurationInt
+import scala.jdk.DurationConverters.*
+
 final case class NatsFixtures(
     connection: Connection[IO],
+    jconnection: JConnection,
     synchronousSubject: Subject.Single,
     synchronousSubscription: Subscription.Synchronous[IO],
     echoSubject: Subject.Single,
@@ -35,11 +41,20 @@ final case class NatsFixtures(
 
 object NatsFixtures {
 
-  val resource: Resource[IO, NatsFixtures] =
-    resource(natsUrl => Nats.connect(new JOptions.Builder().server(natsUrl).build()))
+  val resource: Resource[IO, NatsFixtures] = {
+    val options = (natsUrl: String) => new JOptions.Builder().server(natsUrl).build()
+    resource(
+      natsUrl => Nats.connect(options(natsUrl)),
+      natsUrl =>
+        Resource.make(IO.delay(JNats.connect(options(natsUrl))))(connection =>
+          IO.fromCompletableFuture(IO.delay(connection.drain(30.seconds.toJava))).void
+        )
+    )
+  }
 
   def resource(
-      connection: String => Resource[IO, Connection[IO]]
+      connection: String => Resource[IO, Connection[IO]],
+      jconnection: String => Resource[IO, JConnection]
   ): Resource[IO, NatsFixtures] = {
     val synchronousSubject: Subject.Single = "synchronous"
     val echoSubject: Subject.Single = "echo.1"
@@ -64,11 +79,13 @@ object NatsFixtures {
       container <- Resource.make(acquireContainer)(container => IO.delay(container.close()))
       natsUrl = s"nats://${container.getHost()}:${container.getMappedPort(4222)}"
       connection <- connection(natsUrl)
+      jconnection <- jconnection(natsUrl)
       synchronousSubscription <- connection.subscribe(synchronousSubject)
       dispatcher <- connection.dispatcher(echoMessageHandler(connection))
       _ <- dispatcher.subscribe(echoWildcardSubject)
     } yield NatsFixtures(
       connection = connection,
+      jconnection = jconnection,
       synchronousSubject = synchronousSubject,
       synchronousSubscription = synchronousSubscription,
       echoSubject = echoSubject,

@@ -17,13 +17,19 @@
 package io.nats.scala.otel
 
 import cats.effect.IO
+import cats.effect.kernel.Resource
+import io.nats.client.Nats
 import io.nats.client.Options as JOptions
 import io.nats.scala.core.NatsFixtures
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
+import io.opentelemetry.instrumentation.nats.v2_17.NatsTelemetry
 import org.typelevel.otel4s.context.LocalProvider
 import org.typelevel.otel4s.oteljava.context.Context
 import org.typelevel.otel4s.oteljava.testkit.context.IOLocalTestContextStorage
 import org.typelevel.otel4s.oteljava.testkit.trace.TracesTestkit
+
+import scala.concurrent.duration.DurationInt
+import scala.jdk.DurationConverters.*
 
 final case class TelemetryNatsFixtures(
     natsFixtures: NatsFixtures,
@@ -50,13 +56,22 @@ object TelemetryNatsFixtures {
     }
     tracer <- tracesTestkit.tracerProvider.get("io.nats.scala").toResource
 
-    fixtures <- NatsFixtures.resource { natsUrl =>
-      implicit val _local = local
-      implicit val _tracer = tracer
+    options = (natsUrl: String) => new JOptions.Builder().server(natsUrl).build()
 
-      val options = new JOptions.Builder().server(natsUrl).build()
-      TelemetryNats.connect[IO](openTelemetry.openTelemetry, options)
-    }
+    fixtures <- NatsFixtures.resource(
+      { natsUrl =>
+        implicit val _local = local
+        implicit val _tracer = tracer
+
+        TelemetryNats.connect[IO](openTelemetry.openTelemetry, options(natsUrl))
+      },
+      natsUrl => {
+        val telemetry = NatsTelemetry.builder(openTelemetry.openTelemetry).build()
+        Resource.make(
+          IO.delay(telemetry.newConnection(options(natsUrl), (options: JOptions) => Nats.connect(options)))
+        )(connection => IO.fromCompletableFuture(IO.delay(connection.drain(30.seconds.toJava))).void)
+      }
+    )
   } yield TelemetryNatsFixtures(fixtures, tracesTestkit)
 
 }

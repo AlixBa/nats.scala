@@ -46,7 +46,7 @@ object SpanTree {
   def apply(name: String): SpanTree = SpanTree(name, List.empty)
   def apply(name: String, children: SpanTree*): SpanTree = SpanTree(name, children.toList)
 
-  def apply(spans: List[SpanData]): List[SpanTree] = {
+  private def apply(spans: List[SpanData]): List[SpanTree] = {
     def traceIdParentSpanId(data: SpanData): String = s"${data.getTraceId()}_${data.getParentSpanId()}"
     def traceIdSpanId(data: SpanData): String = s"${data.getTraceId()}_${data.getSpanId()}"
 

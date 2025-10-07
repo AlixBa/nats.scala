@@ -15,14 +15,14 @@ the current [NATS.java](https://github.com/nats-io/nats.java) implementation.
 ### SBT
 
 ```scala
-libraryDependencies += "io.github.alixba" %% "nats-scala-core" % "0.0.0"
+libraryDependencies += "io.github.alixba" %% "nats-scala-core" % "0.0.1"
 ```
 
 ### Mill
 
 ```scala
 override def mvnDeps: Simple[Seq[Dep]] = Seq(
-  mvn"io.github.alixba::nats-scala-core:0.0.0"
+  mvn"io.github.alixba::nats-scala-core:0.0.1"
 )
 ```
 
@@ -114,7 +114,7 @@ See the [Java OpenTelemetry Instrumentation](https://github.com/open-telemetry/o
 
 ```scala
 javaOptions += "-Dcats.effect.trackFiberContext=true"
-libraryDependencies += "io.github.alixba" %% "nats-scala-otel" % "0.0.0"
+libraryDependencies += "io.github.alixba" %% "nats-scala-otel" % "0.0.1"
 ```
 
 ### Mill
@@ -125,7 +125,7 @@ override def forkArgs: Simple[Seq[String]] = Seq(
 )
 
 override def mvnDeps: Simple[Seq[Dep]] = Seq(
-  mvn"io.github.alixba::nats-scala-otel:0.0.0"
+  mvn"io.github.alixba::nats-scala-otel:0.0.1"
 )
 ```
 
@@ -244,6 +244,9 @@ object Main extends IOApp.Simple {
 
 ![nats-scala-otel-example](docs/images/nats-scala-otel-example.png)
 
+### TelemetryError Listener
+
+`TelemetryErrorListener` provides logging through `log4cats` over error in NATS message processing. Add it to your `Options` if you want to replace the default NATS logging system with this integration.
 
 ## Extra
 
@@ -309,4 +312,15 @@ Message{
   errorCode=400
   errorText=Bad Request
 }
+```
+
+### Lame Duck Mode Listener
+
+Use the provided `NatsLameDuckModeListener` to trigger a drain of the current connection and a reconnect whenever the server notifies the client that the connection will be closed. By default, the server will close the connection and the client will only try to reconnect at that point, buffering outgoing messages.
+
+```scala
+import io.nats.client.Options
+import io.nats.scala.extra.NatsLameDuckModeListener
+
+Options.builder().connectionListener(NatsLameDuckModeListener.create()).build()
 ```
