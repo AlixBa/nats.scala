@@ -86,7 +86,7 @@ trait NatsScalaModule
     with ScalafixModule
     with SonatypeCentralPublishModule {
 
-  override def publishVersion: Simple[String] = "0.0.1"
+  override def publishVersion: Simple[String] = "0.0.2"
   override def artifactName: Simple[String] = Task(super.artifactName().replace("modules-", "nats-scala-"))
 
   def crossValue: String
