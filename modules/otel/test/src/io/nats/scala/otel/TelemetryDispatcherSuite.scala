@@ -18,6 +18,7 @@ package io.nats.scala.otel
 
 import cats.effect.IO
 import cats.effect.kernel.Deferred
+import cats.syntax.eq.catsSyntaxEq
 import io.nats.scala.core.Subject
 import munit.AnyFixture
 import munit.CatsEffectSuite
@@ -62,7 +63,7 @@ class TelemetryDispatcherSuite extends CatsEffectSuite {
       for {
         _ <- tracer.rootSpan("root").surround(connection.publish(subject, defaultData))
         message <- deferred.get
-        spans <- tracesTestkit.finishedSpans
+        spans <- tracesTestkit.finishedSpans.iterateUntil(_.size === 4)
       } yield {
         assert(message.spanContext.isDefined)
         assertEquals(
@@ -97,7 +98,7 @@ class TelemetryDispatcherSuite extends CatsEffectSuite {
       for {
         _ <- tracer.rootSpan("root").surround(connection.publish(subject, defaultData))
         message <- deferred.get
-        spans <- tracesTestkit.finishedSpans
+        spans <- tracesTestkit.finishedSpans.iterateUntil(_.size === 4)
       } yield {
         assert(message.spanContext.isDefined)
         assertEquals(
@@ -128,7 +129,7 @@ class TelemetryDispatcherSuite extends CatsEffectSuite {
       for {
         _ <- tracer.rootSpan("root").surround(connection.publish(subject, defaultData))
         message <- deferred.get
-        spans <- tracesTestkit.finishedSpans
+        spans <- tracesTestkit.finishedSpans.iterateUntil(_.size === 4)
       } yield {
         assert(message.spanContext.isDefined)
         assertEquals(
@@ -159,7 +160,7 @@ class TelemetryDispatcherSuite extends CatsEffectSuite {
       for {
         _ <- tracer.rootSpan("root").surround(connection.publish(subject, defaultData))
         message <- deferred.get
-        spans <- tracesTestkit.finishedSpans
+        spans <- tracesTestkit.finishedSpans.iterateUntil(_.size === 4)
       } yield {
         assert(message.spanContext.isDefined)
         assertEquals(

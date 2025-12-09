@@ -30,6 +30,13 @@ trait Message {
 
 object Message {
 
+  def apply(
+      subject: Subject.Single,
+      replyTo: Option[Subject.Single],
+      headers: Headers,
+      data: Array[Byte]
+  ): Message = Impl(subject, replyTo, headers, data)
+
   final private case class Impl(
       subject: Subject.Single,
       replyTo: Option[Subject.Single],

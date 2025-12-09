@@ -8,6 +8,7 @@ the current [NATS.java](https://github.com/nats-io/nats.java) implementation.
 * [Installation](#installation)
 * [Basic Usage](#basic-usage)
 * [OpenTelemetry](#opentelemetry)
+* [Extra](#extra)
 
 
 ## Installation
@@ -249,6 +250,20 @@ object Main extends IOApp.Simple {
 `TelemetryErrorListener` provides logging through `log4cats` over error in NATS message processing. Add it to your `Options` if you want to replace the default NATS logging system with this integration.
 
 ## Extra
+
+### SBT
+
+```scala
+libraryDependencies += "io.github.alixba" %% "nats-scala-extra" % "0.0.2"
+```
+
+### Mill
+
+```scala
+override def mvnDeps: Simple[Seq[Dep]] = Seq(
+  mvn"io.github.alixba::nats-scala-extra:0.0.2"
+)
+```
 
 ### Error Message
 
