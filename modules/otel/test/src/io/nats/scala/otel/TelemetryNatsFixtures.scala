@@ -54,14 +54,13 @@ object TelemetryNatsFixtures {
         textMapPropagators = List(W3CTraceContextPropagator.getInstance())
       )
     }
-    tracer <- tracesTestkit.tracerProvider.get("io.nats.scala").toResource
 
     options = (natsUrl: String) => new JOptions.Builder().server(natsUrl).build()
 
     fixtures <- NatsFixtures.resource(
       { natsUrl =>
         implicit val _local = local
-        implicit val _tracer = tracer
+        implicit val _tracerProvider = tracesTestkit.tracerProvider
 
         TelemetryNats.connect[IO](openTelemetry.openTelemetry, options(natsUrl))
       },

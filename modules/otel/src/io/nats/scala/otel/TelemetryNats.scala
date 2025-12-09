@@ -28,7 +28,7 @@ import io.nats.scala.otel.TelemetryConnection
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.instrumentation.nats.v2_17.NatsTelemetry
 import org.typelevel.otel4s.oteljava.context.Context
-import org.typelevel.otel4s.trace.Tracer
+import org.typelevel.otel4s.trace.TracerProvider
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.duration.FiniteDuration
@@ -40,27 +40,27 @@ import scala.jdk.DurationConverters.*
   */
 object TelemetryNats {
 
-  def connect[F[_]: Async: Tracer](
+  def connect[F[_]: Async: TracerProvider](
       openTelemetry: OpenTelemetry,
       options: JOptions
   )(implicit local: Local[F, Context]): Resource[F, Connection[F]] =
     connect[F](openTelemetry, options, List.empty, 30.seconds)
 
-  def connect[F[_]: Async: Tracer](
+  def connect[F[_]: Async: TracerProvider](
       openTelemetry: OpenTelemetry,
       options: JOptions,
       capturedHeaders: List[String]
   )(implicit local: Local[F, Context]): Resource[F, Connection[F]] =
     connect[F](openTelemetry, options, capturedHeaders, 30.seconds)
 
-  def connect[F[_]: Async: Tracer](
+  def connect[F[_]: Async: TracerProvider](
       openTelemetry: OpenTelemetry,
       options: JOptions,
       drainTimeout: FiniteDuration
   )(implicit local: Local[F, Context]): Resource[F, Connection[F]] =
     connect[F](openTelemetry, options, List.empty, drainTimeout)
 
-  def connect[F[_]: Async: Tracer](
+  def connect[F[_]: Async: TracerProvider](
       openTelemetry: OpenTelemetry,
       options: JOptions,
       capturedHeaders: List[String],
@@ -68,27 +68,27 @@ object TelemetryNats {
   )(implicit local: Local[F, Context]): Resource[F, Connection[F]] =
     connect[F](openTelemetry, options, (options: JOptions) => JNats.connect(options), capturedHeaders, drainTimeout)
 
-  def connectReconnectOnConnect[F[_]: Async: Tracer](
+  def connectReconnectOnConnect[F[_]: Async: TracerProvider](
       openTelemetry: OpenTelemetry,
       options: JOptions
   )(implicit local: Local[F, Context]): Resource[F, Connection[F]] =
     connectReconnectOnConnect[F](openTelemetry, options, List.empty, 30.seconds)
 
-  def connectReconnectOnConnect[F[_]: Async: Tracer](
+  def connectReconnectOnConnect[F[_]: Async: TracerProvider](
       openTelemetry: OpenTelemetry,
       options: JOptions,
       capturedHeaders: List[String]
   )(implicit local: Local[F, Context]): Resource[F, Connection[F]] =
     connectReconnectOnConnect[F](openTelemetry, options, capturedHeaders, 30.seconds)
 
-  def connectReconnectOnConnect[F[_]: Async: Tracer](
+  def connectReconnectOnConnect[F[_]: Async: TracerProvider](
       openTelemetry: OpenTelemetry,
       options: JOptions,
       drainTimeout: FiniteDuration
   )(implicit local: Local[F, Context]): Resource[F, Connection[F]] =
     connectReconnectOnConnect[F](openTelemetry, options, List.empty, drainTimeout)
 
-  def connectReconnectOnConnect[F[_]: Async: Tracer](
+  def connectReconnectOnConnect[F[_]: Async: TracerProvider](
       openTelemetry: OpenTelemetry,
       options: JOptions,
       capturedHeaders: List[String],
@@ -102,7 +102,7 @@ object TelemetryNats {
       drainTimeout = drainTimeout
     )
 
-  private def connect[F[_]: Async: Tracer](
+  private def connect[F[_]: Async: TracerProvider](
       openTelemetry: OpenTelemetry,
       options: JOptions,
       connection: JOptions => JConnection,
@@ -121,8 +121,12 @@ object TelemetryNats {
     }
 
     Resource
-      .make(acquire)(connection => fromCompletableFuture(blocking(connection.drain(drainTimeout.toJava))).void)
-      .map(connection => TelemetryConnection(Connection(connection, drainTimeout)))
+      .eval(TracerProvider[F].get("io.nats.scala"))
+      .flatMap { implicit tracer =>
+        Resource
+          .make(acquire)(connection => fromCompletableFuture(blocking(connection.drain(drainTimeout.toJava))).void)
+          .map(connection => TelemetryConnection(Connection(connection, drainTimeout)))
+      }
   }
 
 }

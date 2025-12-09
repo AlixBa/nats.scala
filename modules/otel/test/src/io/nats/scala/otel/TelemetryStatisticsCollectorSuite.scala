@@ -38,9 +38,8 @@ class TelemetryStatisticsCollectorSuite extends CatsEffectSuite {
     (for {
       openTelemetry <- InMemoryJOpenTelemetry.resource
       metricsTestkit <- MetricsTestkit.fromInMemory[IO](openTelemetry.metricReader)
-      meter <- metricsTestkit.meterProvider.get("io.nats.scala").toResource
       collector <- {
-        implicit val _meter = meter
+        implicit val _meterProvider = metricsTestkit.meterProvider
         TelemetryStatisticsCollector[IO](connectionName, name, BucketBoundaries(10))
       }
     } yield (metricsTestkit, collector)).use { case (metricsTestkit, collector) =>
