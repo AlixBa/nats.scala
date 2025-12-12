@@ -28,16 +28,9 @@ trait Message {
   def data: Array[Byte]
 }
 
-object Message {
+object Message extends MessageFactory {
 
-  def apply(
-      subject: Subject.Single,
-      replyTo: Option[Subject.Single],
-      headers: Headers,
-      data: Array[Byte]
-  ): Message = Impl(subject, replyTo, headers, data)
-
-  final private case class Impl(
+  final private[core] case class Impl(
       subject: Subject.Single,
       replyTo: Option[Subject.Single],
       headers: Headers,
