@@ -38,23 +38,6 @@ object NatsLameDuckModeListener {
       onEvent(conn, `type`, serverGracePeriod)
   }
 
-  def merge(listener: ConnectionListener): ConnectionListener =
-    merge(listener, 10.seconds)
-
-    /** Creates a [[io.nats.client.ConnectionListener]] which listens to LAME_DUCK events. Starts by flushing the
-      * current connection up to 75% of the grace period of the server then closes the connection and reconnect to any
-      * available server in the original list.
-      */
-  def merge(
-      listener: ConnectionListener,
-      serverGracePeriod: FiniteDuration
-  ): ConnectionListener = new ConnectionListener {
-    override def connectionEvent(conn: Connection, `type`: ConnectionListener.Events): Unit = {
-      listener.connectionEvent(conn, `type`)
-      onEvent(conn, `type`, serverGracePeriod)
-    }
-  }
-
   private def onEvent(
       conn: Connection,
       `type`: ConnectionListener.Events,

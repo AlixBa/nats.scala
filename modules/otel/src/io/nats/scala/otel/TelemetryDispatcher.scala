@@ -16,6 +16,7 @@
 
 package io.nats.scala.otel
 
+import cats.Functor
 import cats.effect.Concurrent
 import cats.effect.Resource
 import cats.mtl.Local
@@ -24,6 +25,7 @@ import io.nats.scala.core.MessageHandler
 import io.nats.scala.core.QueueName
 import io.nats.scala.core.Subject.Wildcard
 import io.nats.scala.core.Subscription
+import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.otel4s.oteljava.context.Context
 import org.typelevel.otel4s.trace.Tracer
 
@@ -31,47 +33,75 @@ private object TelemetryDispatcher {
 
   object WithHandler {
 
-    private[nats] def apply[F[_]: Concurrent: Tracer](
+    private[nats] def apply[F[_]: Concurrent: Tracer: StructuredLogger](
         dispatcher: Dispatcher.WithHandler[F]
     )(implicit local: Local[F, Context]): Dispatcher.WithHandler[F] =
       new Dispatcher.WithHandler[F] {
         val delegate: Dispatcher[F] = TelemetryDispatcher[F](dispatcher)
 
         override def subscribe(subject: Wildcard, handler: MessageHandler[F]): Resource[F, Subscription[F]] =
-          delegate.subscribe(subject, handler)
+          withLogging(delegate.subscribe(subject, handler), Map("subject" -> subject.value))
 
         override def subscribe(
             subject: Wildcard,
             queueName: QueueName,
             handler: MessageHandler[F]
         ): Resource[F, Subscription[F]] =
-          delegate.subscribe(subject, queueName, handler)
+          withLogging(
+            delegate.subscribe(subject, queueName, handler),
+            Map("subject" -> subject.value, "queueName" -> queueName.value)
+          )
 
         override def subscribe(subject: Wildcard): Resource[F, Unit] =
-          dispatcher.subscribe(subject)
+          withLogging(dispatcher.subscribe(subject), Map("subject" -> subject.value))
 
         override def subscribe(subject: Wildcard, queueName: QueueName): Resource[F, Unit] =
-          dispatcher.subscribe(subject, queueName)
-
+          withLogging(
+            dispatcher.subscribe(subject, queueName),
+            Map("subject" -> subject.value, "queueName" -> queueName.value)
+          )
       }
 
   }
 
-  private[nats] def apply[F[_]: Concurrent: Tracer](
+  private[nats] def apply[F[_]: Concurrent: Tracer: StructuredLogger](
       dispatcher: Dispatcher[F]
   )(implicit local: Local[F, Context]): Dispatcher[F] =
     new Dispatcher[F] {
 
       override def subscribe(subject: Wildcard, handler: MessageHandler[F]): Resource[F, Subscription[F]] =
-        dispatcher.subscribe(subject, TelemetryMessageHandler(handler))
+        withLogging(
+          dispatcher.subscribe(subject, TelemetryMessageHandler(handler)),
+          Map("subject" -> subject.value)
+        )
 
       override def subscribe(
           subject: Wildcard,
           queueName: QueueName,
           handler: MessageHandler[F]
       ): Resource[F, Subscription[F]] =
-        dispatcher.subscribe(subject, queueName, TelemetryMessageHandler(handler))
+        withLogging(
+          dispatcher.subscribe(subject, queueName, TelemetryMessageHandler(handler)),
+          Map("subject" -> subject.value, "queueName" -> queueName.value)
+        )
 
     }
+
+  private[nats] def withLogging[F[_]: Functor: StructuredLogger, A](
+      subscription: Resource[F, A],
+      context: Map[String, String]
+  ): Resource[F, A] = {
+    val L: StructuredLogger[F] = StructuredLogger[F]
+
+    for {
+      _ <- Resource.make(L.info(context)("NATS subscription initializing"))(_ =>
+        L.info(context)("NATS subscription terminated")
+      )
+      subscription <- subscription
+      _ <- Resource.make(L.info(context)("NATS subscription initialized"))(_ =>
+        L.info(context)("NATS subscription terminating")
+      )
+    } yield subscription
+  }
 
 }

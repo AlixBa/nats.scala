@@ -16,7 +16,6 @@
 
 package io.nats.scala.otel
 
-import cats.Show
 import cats.effect.IO
 import cats.effect.std.Dispatcher
 import io.nats.client.Connection
@@ -24,6 +23,7 @@ import io.nats.client.Consumer
 import io.nats.client.Message
 import io.nats.client.impl.NatsMessage
 import io.nats.scala.core.NatsFixtures
+import io.nats.scala.otel.log.LogContext
 import munit.AnyFixture
 import munit.CatsEffectSuite
 import munit.catseffect.IOFixture
@@ -53,9 +53,9 @@ class TelemetryErrorListenerSuite extends CatsEffectSuite {
       override def fromName(name: String): IO[SelfAwareStructuredLogger[IO]] = IO.pure(logger)
     }
 
-    implicit val cs0: Show[Connection] = Show.show(_ => "connection")
-    implicit val cs1: Show[Consumer] = Show.show(_ => "consumer")
-    implicit val ms: Show[Message] = Show.show(_ => "message")
+    implicit val clg: LogContext[Connection] = LogContext.of(_ => Map("connection" -> "connection"))
+    implicit val clg2: LogContext[Consumer] = LogContext.of(_ => Map("consumer" -> "consumer"))
+    implicit val mlg: LogContext[Message] = LogContext.of(_ => Map("message" -> "message"))
 
     val exception = new Exception("exception")
     val mdc = Map("connection" -> "connection")

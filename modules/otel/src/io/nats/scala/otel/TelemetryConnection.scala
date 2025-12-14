@@ -31,6 +31,8 @@ import io.nats.scala.core.QueueName
 import io.nats.scala.core.Subject.Single
 import io.nats.scala.core.Subject.Wildcard
 import io.nats.scala.core.Subscription.Synchronous
+import io.nats.scala.otel.TelemetryDispatcher.withLogging
+import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.otel4s.oteljava.context.Context
 import org.typelevel.otel4s.trace.Tracer
 
@@ -38,7 +40,7 @@ import scala.concurrent.duration.FiniteDuration
 
 private object TelemetryConnection {
 
-  private[nats] def apply[F[_]: Concurrent: Tracer](
+  private[nats] def apply[F[_]: Concurrent: Tracer: StructuredLogger](
       connection: Connection[F]
   )(implicit local: Local[F, Context]): Connection[F] = new Connection[F] {
 
@@ -69,10 +71,13 @@ private object TelemetryConnection {
       connection.request(subject, headers, data, timeout)
 
     override def subscribe(subject: Wildcard): Resource[F, Synchronous[F]] =
-      connection.subscribe(subject)
+      withLogging(connection.subscribe(subject), Map("subject" -> subject.value))
 
     override def subscribe(subject: Wildcard, queueName: QueueName): Resource[F, Synchronous[F]] =
-      connection.subscribe(subject, queueName)
+      withLogging(
+        connection.subscribe(subject, queueName),
+        Map("subject" -> subject.value, "queueName" -> queueName.value)
+      )
 
     override def dispatcher(): Resource[F, Dispatcher[F]] =
       connection.dispatcher().map(TelemetryDispatcher(_))

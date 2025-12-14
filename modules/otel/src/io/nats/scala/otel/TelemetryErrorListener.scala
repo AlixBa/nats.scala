@@ -17,32 +17,33 @@
 package io.nats.scala.otel
 
 import cats.Functor
-import cats.Show
 import cats.effect.kernel.Async
 import cats.effect.kernel.Resource
 import cats.effect.std.Dispatcher
 import cats.syntax.functor.toFunctorOps
-import cats.syntax.show.toShow
 import io.nats.client.Connection
 import io.nats.client.Consumer
 import io.nats.client.ErrorListener
 import io.nats.client.Message
 import io.nats.client.impl.ErrorListenerLoggerImpl
+import io.nats.scala.otel.log.LogContext
 import org.typelevel.log4cats.LoggerFactory
 
 object TelemetryErrorListener {
 
-  def apply[F[_]: LoggerFactory: Async](implicit
-      cs0: Show[Connection],
-      cs1: Show[Consumer],
-      ms: Show[Message]
+  /** Creates a [[io.nats.client.ErrorListener]] logging all errors, exceptions and warnings. */
+  def resource[F[_]: LoggerFactory: Async](implicit
+      clg: LogContext[Connection],
+      clg2: LogContext[Consumer],
+      mlg: LogContext[Message]
   ): Resource[F, ErrorListener] =
     Dispatcher.parallel[F](await = true).evalMap(apply(_))
 
-  def apply[F[_]: LoggerFactory: Functor](dispatcher: Dispatcher[F])(implicit
-      cs0: Show[Connection],
-      cs1: Show[Consumer],
-      ms: Show[Message]
+    /** Creates a [[io.nats.client.ErrorListener]] logging all errors, exceptions and warnings. */
+  def apply[F[_]: Functor:LoggerFactory](dispatcher: Dispatcher[F])(implicit
+      clg: LogContext[Connection],
+      clg2: LogContext[Consumer],
+      mlg: LogContext[Message]
   ): F[ErrorListener] = LoggerFactory[F].fromName("io.nats.scala.ErrorListener").map { logger =>
     // Extending the current NATS implementation so we still rely on Java logging
     // in case we didn't override a property. Currently not handling JetStreams.
@@ -50,27 +51,27 @@ object TelemetryErrorListener {
 
       override def errorOccurred(conn: Connection, error: String): Unit =
         dispatcher.unsafeRunAndForget(
-          logger.error(Map("connection" -> conn.show))(error)
+          logger.error(clg.toContext(conn))(error)
         )
 
       override def exceptionOccurred(conn: Connection, exp: Exception): Unit =
         dispatcher.unsafeRunAndForget(
-          logger.error(Map("connection" -> conn.show), exp)(exp.getMessage())
+          logger.error(clg.toContext(conn), exp)(exp.getMessage())
         )
 
       override def slowConsumerDetected(conn: Connection, consumer: Consumer): Unit =
         dispatcher.unsafeRunAndForget(
-          logger.warn(Map("connection" -> conn.show, "consumer" -> consumer.show))("Slow consumer detected")
+          logger.warn(clg.toContext(conn) ++ clg2.toContext(consumer))("Slow consumer detected")
         )
 
       override def messageDiscarded(conn: Connection, msg: Message): Unit =
         dispatcher.unsafeRunAndForget(
-          logger.warn(Map("connection" -> conn.show, "message" -> msg.show))("Message discarded")
+          logger.warn(clg.toContext(conn) ++ mlg.toContext(msg))("Message discarded")
         )
 
       override def socketWriteTimeout(conn: Connection): Unit =
         dispatcher.unsafeRunAndForget(
-          logger.error(Map("connection" -> conn.show))("Socket write timeout")
+          logger.error(clg.toContext(conn))("Socket write timeout")
         )
 
     }

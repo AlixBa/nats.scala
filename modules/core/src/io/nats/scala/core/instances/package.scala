@@ -16,27 +16,38 @@
 
 package io.nats.scala.core
 
-import cats.Show
+import cats.Semigroup
 import io.nats.client.Connection
-import io.nats.client.Consumer
-import io.nats.client.Message
+import io.nats.client.ConnectionListener
+
+import java.lang
 
 package object instances {
 
-  // TODO: move to a separate file
-  object show {
+  object connectionlistener {
 
-    implicit val conns: Show[Connection] = Show.show[Connection] { connection =>
-      s"Connection(clientId=${connection.getServerInfo().getClientId()})"
-    }
+    implicit val semigroup: Semigroup[ConnectionListener] =
+      Semigroup.instance[ConnectionListener]((a, b) =>
+        new ConnectionListener {
+          override def connectionEvent(
+              conn: Connection,
+              `type`: ConnectionListener.Events,
+              time: lang.Long,
+              uriDetails: String
+          ): Unit = {
+            a.connectionEvent(conn, `type`, time, uriDetails)
+            b.connectionEvent(conn, `type`, time, uriDetails)
+          }
 
-    implicit val conss: Show[Consumer] = Show.show[Consumer] { consumer =>
-      s"Consumer(${consumer.hashCode()})"
-    }
-
-    implicit val ms: Show[Message] = Show.show[Message] { message =>
-      s"Message(subject=${message.getSubject()})"
-    }
+          override def connectionEvent(
+              conn: Connection,
+              `type`: ConnectionListener.Events
+          ): Unit = {
+            a.connectionEvent(conn, `type`)
+            b.connectionEvent(conn, `type`)
+          }
+        }
+      )
 
   }
 

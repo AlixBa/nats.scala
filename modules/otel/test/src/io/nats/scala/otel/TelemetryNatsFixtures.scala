@@ -21,8 +21,12 @@ import cats.effect.kernel.Resource
 import io.nats.client.Nats
 import io.nats.client.Options as JOptions
 import io.nats.scala.core.NatsFixtures
+import io.nats.scala.otel.instances.log.*
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.instrumentation.nats.v2_17.NatsTelemetry
+import org.typelevel.log4cats.LoggerFactory
+import org.typelevel.log4cats.SelfAwareStructuredLogger
+import org.typelevel.log4cats.testing.StructuredTestingLogger
 import org.typelevel.otel4s.context.LocalProvider
 import org.typelevel.otel4s.oteljava.context.Context
 import org.typelevel.otel4s.oteljava.testkit.context.IOLocalTestContextStorage
@@ -33,7 +37,8 @@ import scala.jdk.DurationConverters.*
 
 final case class TelemetryNatsFixtures(
     natsFixtures: NatsFixtures,
-    tracesTestkit: TracesTestkit[IO]
+    tracesTestkit: TracesTestkit[IO],
+    logger: StructuredTestingLogger[IO]
 )
 
 object TelemetryNatsFixtures {
@@ -55,12 +60,41 @@ object TelemetryNatsFixtures {
       )
     }
 
-    options = (natsUrl: String) => new JOptions.Builder().server(natsUrl).build()
+    logger: StructuredTestingLogger[IO] = StructuredTestingLogger.impl[IO]()
+
+    loggerFactory = new LoggerFactory[IO] {
+      override def getLoggerFromName(name: String): SelfAwareStructuredLogger[IO] = logger
+      override def fromName(name: String): IO[SelfAwareStructuredLogger[IO]] = IO.pure(logger)
+    }
+
+    connectionListener <- {
+      implicit val _loggerFactory = loggerFactory
+      TelemetryConnectionListener.resource[IO]
+    }
+
+    errorListener <- {
+      implicit val _loggerFactory = loggerFactory
+      TelemetryErrorListener.resource[IO]
+    }
+
+    readListener <- {
+      implicit val _loggerFactory = loggerFactory
+      TelemetryReadListener.resource[IO]
+    }
+
+    options = (natsUrl: String) =>
+      new JOptions.Builder()
+        .server(natsUrl)
+        .connectionListener(connectionListener)
+        .errorListener(errorListener)
+        .readListener(readListener)
+        .build()
 
     fixtures <- NatsFixtures.resource(
       { natsUrl =>
         implicit val _local = local
         implicit val _tracerProvider = tracesTestkit.tracerProvider
+        implicit val _loggerFactory = loggerFactory
 
         TelemetryNats.connect[IO](openTelemetry.openTelemetry, options(natsUrl))
       },
@@ -71,6 +105,6 @@ object TelemetryNatsFixtures {
         )(connection => IO.fromCompletableFuture(IO.delay(connection.drain(30.seconds.toJava))).void)
       }
     )
-  } yield TelemetryNatsFixtures(fixtures, tracesTestkit)
+  } yield TelemetryNatsFixtures(fixtures, tracesTestkit, logger)
 
 }
