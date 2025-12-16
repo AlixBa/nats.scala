@@ -17,6 +17,7 @@
 package io.nats.scala.core
 
 import cats.syntax.option.none
+import cats.syntax.option.catsSyntaxOptionId
 import io.nats.scala.core.Headers
 import io.nats.scala.core.Message.Impl
 
@@ -24,9 +25,13 @@ import io.nats.scala.core.Message.Impl
 private[core] trait MessageFactory {
 
   def apply(
+      subject: Subject.Single
+  ): Message = Impl(subject, none, Headers.empty, Array.emptyByteArray)
+
+  def apply(
       subject: Subject.Single,
-      replyTo: Option[Subject.Single]
-  ): Message = Impl(subject, replyTo, Headers.empty, Array.emptyByteArray)
+      replyTo: Subject.Single
+  ): Message = Impl(subject, replyTo.some, Headers.empty, Array.emptyByteArray)
 
   def apply(
       subject: Subject.Single,
@@ -40,15 +45,15 @@ private[core] trait MessageFactory {
 
   def apply(
       subject: Subject.Single,
-      replyTo: Option[Subject.Single],
+      replyTo: Subject.Single,
       headers: Headers
-  ): Message = Impl(subject, replyTo, headers, Array.emptyByteArray)
+  ): Message = Impl(subject, replyTo.some, headers, Array.emptyByteArray)
 
   def apply(
       subject: Subject.Single,
-      replyTo: Option[Subject.Single],
+      replyTo: Subject.Single,
       data: Array[Byte]
-  ): Message = Impl(subject, replyTo, Headers.empty, data)
+  ): Message = Impl(subject, replyTo.some, Headers.empty, data)
 
   def apply(
       subject: Subject.Single,
@@ -58,9 +63,9 @@ private[core] trait MessageFactory {
 
   def apply(
       subject: Subject.Single,
-      replyTo: Option[Subject.Single],
+      replyTo: Subject.Single,
       headers: Headers,
       data: Array[Byte]
-  ): Message = Impl(subject, replyTo, headers, data)
+  ): Message = Impl(subject, replyTo.some, headers, data)
 
 }

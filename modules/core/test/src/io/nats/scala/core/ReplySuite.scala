@@ -38,9 +38,9 @@ class ReplySuite extends CatsEffectSuite {
     import _fixtures.*
 
     for {
-      _ <- connection.reply(Message(nullSubject, replyTo = synchronousSubject.some), defaultData)
+      _ <- connection.reply(Message(nullSubject, synchronousSubject), defaultData)
       message <- synchronousSubscription.next(100.millis)
-      _ <- connection.reply(Message(nullSubject, replyTo = none), defaultData)
+      _ <- connection.reply(Message(nullSubject), defaultData)
       errorF <- synchronousSubscription.next(100.millis).attempt
       error = errorF.left.map(_.getMessage())
     } yield {
@@ -59,9 +59,9 @@ class ReplySuite extends CatsEffectSuite {
     val headers = Headers.empty.add("header", "value")
 
     for {
-      _ <- connection.reply(Message(nullSubject, replyTo = synchronousSubject.some), headers, defaultData)
+      _ <- connection.reply(Message(nullSubject, synchronousSubject), headers, defaultData)
       message <- synchronousSubscription.next(100.millis)
-      _ <- connection.reply(Message(nullSubject, replyTo = none), headers, defaultData)
+      _ <- connection.reply(Message(nullSubject), headers, defaultData)
       errorF <- synchronousSubscription.next(100.millis).attempt
       error = errorF.left.map(_.getMessage())
     } yield {
@@ -80,9 +80,9 @@ class ReplySuite extends CatsEffectSuite {
     val replyTo: Subject.Single = "replyTo"
 
     for {
-      _ <- connection.reply(Message(nullSubject, replyTo = synchronousSubject.some), replyTo, defaultData)
+      _ <- connection.reply(Message(nullSubject, synchronousSubject), replyTo, defaultData)
       message <- synchronousSubscription.next(100.millis)
-      _ <- connection.reply(Message(nullSubject, replyTo = none), replyTo, defaultData)
+      _ <- connection.reply(Message(nullSubject), replyTo, defaultData)
       errorF <- synchronousSubscription.next(100.millis).attempt
       error = errorF.left.map(_.getMessage())
     } yield {
@@ -102,9 +102,9 @@ class ReplySuite extends CatsEffectSuite {
     val headers = Headers.empty.add("header", "value")
 
     for {
-      _ <- connection.reply(Message(nullSubject, replyTo = synchronousSubject.some), replyTo, headers, defaultData)
+      _ <- connection.reply(Message(nullSubject, synchronousSubject), replyTo, headers, defaultData)
       message <- synchronousSubscription.next(100.millis)
-      _ <- connection.reply(Message(nullSubject, replyTo = none), replyTo, headers, defaultData)
+      _ <- connection.reply(Message(nullSubject), replyTo, headers, defaultData)
       errorF <- synchronousSubscription.next(100.millis).attempt
       error = errorF.left.map(_.getMessage())
     } yield {
