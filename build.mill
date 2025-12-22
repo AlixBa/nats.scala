@@ -29,7 +29,7 @@ object `package` extends Module {
 
       object test extends NatsScalaTestModule {
         override def mvnDeps: Simple[Seq[Dep]] = Seq(
-          mvn"org.testcontainers:testcontainers:2.0.2",
+          mvn"org.testcontainers:testcontainers:2.0.3",
           mvn"org.typelevel::munit-cats-effect:2.1.0"
         )
       }
