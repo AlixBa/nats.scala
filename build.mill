@@ -23,7 +23,7 @@ object `package` extends Module {
         mvn"org.typelevel::cats-core:2.13.0",
         mvn"org.typelevel::cats-effect:3.6.3"
       ) ++ ifScala3(
-        Seq(mvn"io.github.iltotore::iron:3.2.1"),
+        Seq(mvn"io.github.iltotore::iron:3.2.2"),
         Seq()
       )
 
@@ -41,7 +41,7 @@ object `package` extends Module {
 
       override def repositories: Simple[Seq[String]] = Seq(
         "https://central.sonatype.com/repository/maven-snapshots/"
-        )
+      )
 
       override def mvnDeps: Simple[Seq[Dep]] = Seq(
         mvn"io.opentelemetry.instrumentation:opentelemetry-nats-2.17:2.22.0-alpha",
