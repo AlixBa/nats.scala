@@ -122,16 +122,18 @@ object TelemetryNats {
         .newConnection(options, options => connection(options))
     }
 
-    Resource.eval(for {
-      tracer <- TracerProvider[F].get("io.nats.scala")
-      logger <- LoggerFactory[F].fromName("io.nats.scala.Connection")
-    } yield (tracer, logger)).flatMap { case (tracer, logger) =>
-      implicit val _tracer = tracer
-      implicit val _logger = logger
-      Resource
-        .make(acquire)(connection => fromCompletableFuture(blocking(connection.drain(drainTimeout.toJava))).void)
-        .map(connection => TelemetryConnection(Connection(connection, drainTimeout)))
-    }
+    Resource
+      .eval(for {
+        tracer <- TracerProvider[F].get("io.nats.scala")
+        logger <- LoggerFactory[F].fromName("io.nats.scala.Connection")
+      } yield (tracer, logger))
+      .flatMap { case (tracer, logger) =>
+        implicit val _tracer = tracer
+        implicit val _logger = logger
+        Resource
+          .make(acquire)(connection => fromCompletableFuture(blocking(connection.drain(drainTimeout.toJava))).void)
+          .map(connection => TelemetryConnection(Connection(connection, drainTimeout)))
+      }
   }
 
 }
