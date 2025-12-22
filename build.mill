@@ -41,7 +41,7 @@ object `package` extends Module {
 
       override def repositories: Simple[Seq[String]] = Seq(
         "https://central.sonatype.com/repository/maven-snapshots/"
-        )
+      )
 
       override def mvnDeps: Simple[Seq[Dep]] = Seq(
         mvn"io.opentelemetry.instrumentation:opentelemetry-nats-2.17:2.22.0-alpha",
@@ -116,7 +116,7 @@ trait NatsScalaModule
   )
 
   trait NatsScalaTestModule extends ScalaTests with TestModule.Munit with ScalafixModule {
-    override def munitVersion: Simple[String] = "1.0.4"
+    override def munitVersion: Simple[String] = "1.2.1"
 
     override def scalafixIvyDeps: Simple[Seq[Dep]] = Seq(
       mvn"org.typelevel::typelevel-scalafix:0.2.0"
