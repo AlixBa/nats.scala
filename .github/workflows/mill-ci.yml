@@ -8,7 +8,6 @@ on:
 
 permissions:
   contents: read
-  checks: write
 
 jobs:
   tests:
@@ -25,3 +24,4 @@ jobs:
       if: always()
       with:
         report_paths: 'out/**/test-report.xml'
+        annotate_only: true
