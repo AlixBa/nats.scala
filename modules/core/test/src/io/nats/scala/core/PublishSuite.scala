@@ -43,7 +43,7 @@ class PublishSuite extends CatsEffectSuite {
     } yield {
       assertEquals(message.subject, synchronousSubject)
       assertEquals(message.replyTo, none)
-      assertEquals(message.headers, Headers.empty.add("n", "v"))
+      assertEquals(message.headers, Headers.empty)
       assertEquals(message.data.toList, defaultData.toList)
     }
   }
