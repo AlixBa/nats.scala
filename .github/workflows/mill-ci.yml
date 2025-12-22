@@ -1,0 +1,22 @@
+name: Mill CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v6
+    - uses: coursier/cache-action@v7
+    - uses: actions/setup-java@v5
+      with:
+        distribution: 'temurin'
+        java-version: '21'
+    - run: ./mill __.test
