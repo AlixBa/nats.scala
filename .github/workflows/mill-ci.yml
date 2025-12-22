@@ -20,3 +20,7 @@ jobs:
         distribution: 'temurin'
         java-version: '21'
     - run: ./mill __.test
+    - uses: mikepenz/action-junit-report@v5
+      if: always()
+      with:
+        report_paths: 'out/**/test-report.xml'
