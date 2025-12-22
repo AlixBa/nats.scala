@@ -40,7 +40,7 @@ object TelemetryErrorListener {
     Dispatcher.parallel[F](await = true).evalMap(apply(_))
 
     /** Creates a [[io.nats.client.ErrorListener]] logging all errors, exceptions and warnings. */
-  def apply[F[_]: Functor:LoggerFactory](dispatcher: Dispatcher[F])(implicit
+  def apply[F[_]: Functor: LoggerFactory](dispatcher: Dispatcher[F])(implicit
       clg: LogContext[Connection],
       clg2: LogContext[Consumer],
       mlg: LogContext[Message]
