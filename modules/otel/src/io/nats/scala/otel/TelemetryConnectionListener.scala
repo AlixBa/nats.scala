@@ -46,7 +46,7 @@ object TelemetryConnectionListener {
               uriDetails: String
           ): Unit =
             dispatcher.unsafeRunAndForget(
-              logger.debug(
+              logger.info(
                 Map("event" -> `type`.getEvent(), "time" -> time.toString(), "uriDetails" -> uriDetails) ++
                   clg.toContext(conn)
               )("NATS connection event received")

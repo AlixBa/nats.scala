@@ -28,7 +28,7 @@ package object instances {
 
     implicit val clg: LogContext[Connection] = LogContext.of(conn =>
       Map(
-        "connection.name" -> conn.getOptions().getConnectionName(),
+        "connection.name" -> Option(conn.getOptions().getConnectionName()).getOrElse("<null>"),
         "connection.clientId" -> conn.getServerInfo().getClientId().toString(),
         "connection.serverId" -> conn.getServerInfo().getServerId()
       )

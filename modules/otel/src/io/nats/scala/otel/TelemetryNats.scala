@@ -34,7 +34,7 @@ import org.typelevel.otel4s.trace.TracerProvider
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.duration.FiniteDuration
-import scala.jdk.CollectionConverters.IterableHasAsJava
+import scala.jdk.CollectionConverters.*
 import scala.jdk.DurationConverters.*
 
 /** Creates a [[io.nats.scala.core.Connection]] with NATS instrumentation from the Java instrumentation and context
@@ -114,14 +114,6 @@ object TelemetryNats {
     val A: Async[F] = Async[F]
     import A.*
 
-    val acquire = blocking {
-      NatsTelemetry
-        .builder(openTelemetry)
-        .setCapturedHeaders(capturedHeaders.asJavaCollection)
-        .build()
-        .newConnection(options, options => connection(options))
-    }
-
     Resource
       .eval(for {
         tracer <- TracerProvider[F].get("io.nats.scala")
@@ -130,8 +122,43 @@ object TelemetryNats {
       .flatMap { case (tracer, logger) =>
         implicit val _tracer = tracer
         implicit val _logger = logger
+
+        val context = options
+          .getUnprocessedServers()
+          .asScala
+          .zipWithIndex
+          .map { case (uri, idx) => s"server.$idx" -> uri }
+          .toMap ++ Map(
+          "connection.name" -> Option(options.getConnectionName()).getOrElse("<null>"),
+          "username" -> Option(options.getUsernameChars()).map(new String(_)).getOrElse("<null>"),
+          "token" -> Option(options.getTokenChars()).map(new String(_)).getOrElse("<null>"),
+          "auth.id" -> Option(options.getAuthHandler())
+            .flatMap(auth => Option(auth.getID()))
+            .map(new String(_))
+            .getOrElse("<null>")
+        )
+
+        val acquire = for {
+          _ <- logger.info(context)("NATS connection initializing")
+          connection <- blocking {
+            NatsTelemetry
+              .builder(openTelemetry)
+              .setCapturedHeaders(capturedHeaders.asJavaCollection)
+              .build()
+              .newConnection(options, options => connection(options))
+          }
+          _ <- logger.info(context)("NATS connection initialized")
+        } yield connection
+
+        val release = (connection: JConnection) =>
+          for {
+            _ <- logger.info(context)("NATS connection terminating")
+            _ <- fromCompletableFuture(blocking(connection.drain(drainTimeout.toJava)))
+            _ <- logger.info(context)("NATS connection terminated")
+          } yield ()
+
         Resource
-          .make(acquire)(connection => fromCompletableFuture(blocking(connection.drain(drainTimeout.toJava))).void)
+          .make(acquire)(connection => release(connection))
           .map(connection => TelemetryConnection(Connection(connection, drainTimeout)))
       }
   }

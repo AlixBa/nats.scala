@@ -16,8 +16,8 @@
 
 package io.nats.scala.core
 
-import cats.syntax.option.none
 import cats.syntax.option.catsSyntaxOptionId
+import cats.syntax.option.none
 import io.nats.scala.core.Headers
 import io.nats.scala.core.Message.Impl
 
