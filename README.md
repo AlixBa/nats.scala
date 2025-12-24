@@ -16,14 +16,14 @@ the current [NATS.java](https://github.com/nats-io/nats.java) implementation.
 ### SBT
 
 ```scala
-libraryDependencies += "io.github.alixba" %% "nats-scala-core" % "0.0.5"
+libraryDependencies += "io.github.alixba" %% "nats-scala-core" % "0.0.6"
 ```
 
 ### Mill
 
 ```scala
 override def mvnDeps: Simple[Seq[Dep]] = Seq(
-  mvn"io.github.alixba::nats-scala-core:0.0.5"
+  mvn"io.github.alixba::nats-scala-core:0.0.6"
 )
 ```
 
@@ -115,7 +115,7 @@ See the [Java OpenTelemetry Instrumentation](https://github.com/open-telemetry/o
 
 ```scala
 javaOptions += "-Dcats.effect.trackFiberContext=true"
-libraryDependencies += "io.github.alixba" %% "nats-scala-otel" % "0.0.5"
+libraryDependencies += "io.github.alixba" %% "nats-scala-otel" % "0.0.6"
 ```
 
 ### Mill
@@ -126,7 +126,7 @@ override def forkArgs: Simple[Seq[String]] = Seq(
 )
 
 override def mvnDeps: Simple[Seq[Dep]] = Seq(
-  mvn"io.github.alixba::nats-scala-otel:0.0.5"
+  mvn"io.github.alixba::nats-scala-otel:0.0.6"
 )
 ```
 
@@ -254,14 +254,14 @@ object Main extends IOApp.Simple {
 ### SBT
 
 ```scala
-libraryDependencies += "io.github.alixba" %% "nats-scala-extra" % "0.0.5"
+libraryDependencies += "io.github.alixba" %% "nats-scala-extra" % "0.0.6"
 ```
 
 ### Mill
 
 ```scala
 override def mvnDeps: Simple[Seq[Dep]] = Seq(
-  mvn"io.github.alixba::nats-scala-extra:0.0.5"
+  mvn"io.github.alixba::nats-scala-extra:0.0.6"
 )
 ```
 
