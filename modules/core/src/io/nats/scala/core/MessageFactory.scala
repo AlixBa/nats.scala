@@ -68,4 +68,11 @@ private[core] trait MessageFactory {
       data: Array[Byte]
   ): Message = Impl(subject, replyTo.some, headers, data)
 
+  def apply(
+      subject: Subject.Single,
+      replyTo: Option[Subject.Single],
+      headers: Headers,
+      data: Array[Byte]
+  ): Message = Impl(subject, replyTo, headers, data)
+
 }

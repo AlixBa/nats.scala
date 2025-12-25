@@ -18,6 +18,7 @@ package io.nats.scala.core
 
 import cats.syntax.option.catsSyntaxOptionId
 import cats.syntax.option.none
+import io.nats.scala.core.syntax.connection.toConnectionOps
 import munit.AnyFixture
 import munit.CatsEffectSuite
 import munit.catseffect.IOFixture

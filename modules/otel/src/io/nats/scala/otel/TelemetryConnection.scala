@@ -91,18 +91,6 @@ private object TelemetryConnection {
     override def stream(subject: Wildcard, queueName: QueueName): F[(Stream[F, Message], F[Unit])] =
       connectionStream.stream(subject, queueName)
 
-    override def reply(message: Message, data: Array[Byte]): F[Unit] =
-      connection.reply(message, data)
-
-    override def reply(message: Message, headers: Headers, data: Array[Byte]): F[Unit] =
-      connection.reply(message, headers, data)
-
-    override def reply(message: Message, replyTo: Single, data: Array[Byte]): F[Unit] =
-      connection.reply(message, replyTo, data)
-
-    override def reply(message: Message, replyTo: Single, headers: Headers, data: Array[Byte]): F[Unit] =
-      connection.reply(message, replyTo, headers, data)
-
   }
 
 }

@@ -16,6 +16,7 @@
 
 package io.nats.scala.core
 
+import cats.effect.Spawn
 import cats.effect.kernel.Async
 import cats.effect.kernel.Resource
 import cats.effect.std.Dispatcher as CEDispatcher
@@ -58,15 +59,11 @@ trait Connection[F[_]] extends ConnectionStream[F] {
   def dispatcher(): Resource[F, Dispatcher[F]]
   def dispatcher(handler: MessageHandler[F]): Resource[F, Dispatcher.WithHandler[F]]
 
-  /** Helpers to reply using Message.replyTo if non empty */
-  def reply(message: Message, data: Array[Byte]): F[Unit]
-  def reply(message: Message, headers: Headers, data: Array[Byte]): F[Unit]
-  def reply(message: Message, replyTo: Subject.Single, data: Array[Byte]): F[Unit]
-  def reply(message: Message, replyTo: Subject.Single, headers: Headers, data: Array[Byte]): F[Unit]
-
 }
 
 object Connection {
+
+  def noop[F[_]: Spawn]: Connection[F] = NoopConnection.instance[F]
 
   private[nats] def apply[F[_]: Async](
       connection: JConnection,
@@ -143,23 +140,6 @@ object Connection {
 
     override def stream(subject: Wildcard, queueName: QueueName): F[(Stream[F, Message], F[Unit])] =
       connectionStream.stream(subject, queueName)
-
-    override def reply(message: Message, data: Array[Byte]): F[Unit] =
-      whenReplyTo(message)(_replyTo => publish(_replyTo, data))
-
-    override def reply(message: Message, headers: Headers, data: Array[Byte]): F[Unit] =
-      whenReplyTo(message)(_replyTo => publish(_replyTo, headers, data))
-
-    override def reply(message: Message, replyTo: Subject.Single, data: Array[Byte]): F[Unit] =
-      whenReplyTo(message)(_replyTo => publish(_replyTo, replyTo, data))
-
-    override def reply(message: Message, replyTo: Subject.Single, headers: Headers, data: Array[Byte]): F[Unit] =
-      whenReplyTo(message)(_replyTo => publish(_replyTo, replyTo, headers, data))
-
-    private def whenReplyTo(message: Message)(f: Subject.Single => F[Unit]): F[Unit] = message.replyTo match {
-      case None          => unit
-      case Some(replyTo) => f(replyTo)
-    }
 
   }
 

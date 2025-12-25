@@ -76,6 +76,16 @@ object `package` extends Module {
       }
     }
 
+    object testkit extends NatsScalaModule with CrossValue {
+      override def moduleDeps: Seq[PublishModule] = super.moduleDeps ++
+        Seq(core)
+
+      object test extends NatsScalaTestModule {
+        override def moduleDeps: Seq[JavaModule] = super.moduleDeps ++
+          Seq(core.test)
+      }
+    }
+
   }
 
 }
@@ -86,7 +96,7 @@ trait NatsScalaModule
     with ScalafixModule
     with SonatypeCentralPublishModule {
 
-  override def publishVersion: Simple[String] = "0.0.5"
+  override def publishVersion: Simple[String] = "0.0.6"
   override def artifactName: Simple[String] = Task(super.artifactName().replace("modules-", "nats-scala-"))
 
   def crossValue: String
