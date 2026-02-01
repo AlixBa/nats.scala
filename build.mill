@@ -126,7 +126,7 @@ trait NatsScalaModule
   )
 
   trait NatsScalaTestModule extends ScalaTests with TestModule.Munit with ScalafixModule {
-    override def munitVersion: Simple[String] = "1.2.1"
+    override def munitVersion: Simple[String] = "1.2.2"
 
     override def scalafixIvyDeps: Simple[Seq[Dep]] = Seq(
       mvn"org.typelevel::typelevel-scalafix:0.2.0"
