@@ -54,10 +54,11 @@ object TelemetryNatsFixtures {
 
     tracesTestkit <- {
       implicit val _localProvider = localProvider
-      TracesTestkit.fromInMemory[IO](
-        inMemorySpanExporter = openTelemetry.spanExporter,
-        textMapPropagators = List(W3CTraceContextPropagator.getInstance())
-      )
+      TracesTestkit
+        .builder[IO]
+        .withInMemorySpanExporter(openTelemetry.spanExporter)
+        .withTextMapPropagators(List(W3CTraceContextPropagator.getInstance()))
+        .build
     }
 
     logger: StructuredTestingLogger[IO] = StructuredTestingLogger.impl[IO]()
@@ -101,7 +102,7 @@ object TelemetryNatsFixtures {
       natsUrl => {
         val telemetry = NatsTelemetry.builder(openTelemetry.openTelemetry).build()
         Resource.make(
-          IO.delay(telemetry.newConnection(options(natsUrl), (options: JOptions) => Nats.connect(options)))
+          IO.delay(telemetry.createConnection(options(natsUrl), (options: JOptions) => Nats.connect(options)))
         )(connection => IO.fromCompletableFuture(IO.delay(connection.drain(30.seconds.toJava))).void)
       }
     )

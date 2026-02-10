@@ -44,7 +44,7 @@ object `package` extends Module {
       )
 
       override def mvnDeps: Simple[Seq[Dep]] = Seq(
-        mvn"io.opentelemetry.instrumentation:opentelemetry-nats-2.17:2.22.0-alpha",
+        mvn"io.opentelemetry.instrumentation:opentelemetry-nats-2.17:2.24.0-alpha",
         mvn"org.typelevel::log4cats-core:2.7.1",
         mvn"org.typelevel::otel4s-oteljava-context-storage:0.15.1",
         mvn"org.typelevel::otel4s-oteljava-metrics:0.15.1",

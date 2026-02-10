@@ -43,7 +43,7 @@ class TelemetryReadListenerSuite extends CatsEffectSuite {
     Dispatcher.sequential[IO](await = true).use { dispatcher =>
       TelemetryReadListener[IO](dispatcher).flatMap(listener =>
         for {
-          _ <- IO.delay(listener.protocol("operation", null))
+          _ <- IO.delay(listener.protocol("operation", None.orNull))
           _ <- IO.delay(listener.protocol("operation", "full_text"))
           _ <- IO.delay(listener.message("operation", message))
           logs <- logger.logged.iterateUntil(_.size === 3)

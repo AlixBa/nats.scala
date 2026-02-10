@@ -145,7 +145,7 @@ object TelemetryNats {
               .builder(openTelemetry)
               .setCapturedHeaders(capturedHeaders.asJavaCollection)
               .build()
-              .newConnection(options, options => connection(options))
+              .createConnection(options, options => connection(options))
           }
           _ <- logger.info(context)("NATS connection initialized")
         } yield connection
