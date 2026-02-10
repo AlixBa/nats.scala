@@ -46,9 +46,9 @@ object `package` extends Module {
       override def mvnDeps: Simple[Seq[Dep]] = Seq(
         mvn"io.opentelemetry.instrumentation:opentelemetry-nats-2.17:2.22.0-alpha",
         mvn"org.typelevel::log4cats-core:2.7.1",
-        mvn"org.typelevel::otel4s-oteljava-context-storage:0.14.0",
-        mvn"org.typelevel::otel4s-oteljava-metrics:0.14.0",
-        mvn"org.typelevel::otel4s-oteljava-trace:0.14.0"
+        mvn"org.typelevel::otel4s-oteljava-context-storage:0.15.1",
+        mvn"org.typelevel::otel4s-oteljava-metrics:0.15.1",
+        mvn"org.typelevel::otel4s-oteljava-trace:0.15.1"
       )
 
       object test extends NatsScalaTestModule {
@@ -59,9 +59,9 @@ object `package` extends Module {
 
         override def mvnDeps: Simple[Seq[Dep]] = Seq(
           mvn"org.typelevel::log4cats-testing:2.7.1",
-          mvn"org.typelevel::otel4s-oteljava-context-storage-testkit:0.14.0",
-          mvn"org.typelevel::otel4s-oteljava-metrics-testkit:0.14.0",
-          mvn"org.typelevel::otel4s-oteljava-trace-testkit:0.14.0"
+          mvn"org.typelevel::otel4s-oteljava-context-storage-testkit:0.15.1",
+          mvn"org.typelevel::otel4s-oteljava-metrics-testkit:0.15.1",
+          mvn"org.typelevel::otel4s-oteljava-trace-testkit:0.15.1"
         )
       }
     }
