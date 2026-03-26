@@ -21,7 +21,7 @@ object `package` extends Module {
         mvn"io.nats:jnats:2.25.1",
         mvn"org.typelevel::case-insensitive:1.5.0",
         mvn"org.typelevel::cats-core:2.13.0",
-        mvn"org.typelevel::cats-effect:3.6.3"
+        mvn"org.typelevel::cats-effect:3.7.0"
       ) ++ ifScala3(
         Seq(mvn"io.github.iltotore::iron:3.2.3"),
         Seq()
