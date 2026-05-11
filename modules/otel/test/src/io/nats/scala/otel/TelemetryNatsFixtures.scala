@@ -80,6 +80,7 @@ object TelemetryNatsFixtures {
 
     readListener <- {
       implicit val _loggerFactory = loggerFactory
+      implicit val _tracerProvider = tracesTestkit.tracerProvider
       TelemetryReadListener.resource[IO]
     }
 

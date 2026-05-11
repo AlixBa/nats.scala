@@ -16,28 +16,34 @@
 
 package io.nats.scala.otel
 
-import cats.Functor
+import cats.Monad
 import cats.effect.Async
 import cats.effect.Resource
 import cats.effect.std.Dispatcher
+import cats.syntax.flatMap.toFlatMapOps
 import cats.syntax.functor.toFunctorOps
 import io.nats.client.Message
 import io.nats.client.ReadListener
+import io.nats.scala.core.Headers
 import io.nats.scala.otel.log.LogContext
 import org.typelevel.log4cats.LoggerFactory
+import org.typelevel.otel4s.trace.TracerProvider
 
 object TelemetryReadListener {
 
   /** Creates a [[io.nats.client.ReadListener]] logging all messages received by a connection. */
-  def resource[F[_]: Async: LoggerFactory](implicit
+  def resource[F[_]: Async: LoggerFactory: TracerProvider](implicit
       mlg: LogContext[Message]
   ): Resource[F, ReadListener] =
     Dispatcher.parallel[F](true).evalMap(apply[F](_))
 
-  def apply[F[_]: Functor: LoggerFactory](dispatcher: Dispatcher[F])(implicit
+  def apply[F[_]: Monad: LoggerFactory: TracerProvider](dispatcher: Dispatcher[F])(implicit
       mlg: LogContext[Message]
   ): F[ReadListener] =
-    LoggerFactory[F].fromName("io.nats.scala.ReadListener").map { logger =>
+    (for {
+      logger <- LoggerFactory[F].fromName("io.nats.scala.ReadListener")
+      tracer <- TracerProvider[F].get("io.nats.scala")
+    } yield (logger, tracer)).map { case (logger, tracer) =>
       new ReadListener {
         override def protocol(op: String, text: String): Unit =
           dispatcher.unsafeRunAndForget(
@@ -48,7 +54,9 @@ object TelemetryReadListener {
 
         override def message(op: String, message: Message): Unit =
           dispatcher.unsafeRunAndForget(
-            logger.info(Map("op" -> op) ++ mlg.toContext(message))("NATS message received")
+            tracer.joinOrRoot(Headers.jheadersAsMap(message.getHeaders()))(
+              logger.info(Map("op" -> op) ++ mlg.toContext(message))("NATS message received")
+            )
           )
       }
     }

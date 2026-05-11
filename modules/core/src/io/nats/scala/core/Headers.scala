@@ -97,4 +97,9 @@ object Headers {
     jh
   }
 
+  private[nats] def jheadersAsMap(headers: JHeaders): Map[String, String] =
+    Option(headers)
+      .map(_.entrySet().asScala.map(entry => entry.getKey() -> entry.getValue().asScala.mkString(",")).toMap)
+      .getOrElse(Map.empty)
+
 }
